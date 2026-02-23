@@ -1,0 +1,9 @@
+# Disabled for now: no Redis in current environment.
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: {{ include "templateapp.fullname" . }}-config
+#   labels:
+#     {{- include "templateapp.labels" . | nindent 4 }}
+# data:
+#   redis-url: "redis://{{ .Values.redis.host }}:{{ .Values.redis.port }}"

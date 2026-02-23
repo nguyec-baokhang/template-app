@@ -1,0 +1,67 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_REPO = 'localhost:5001/app-image'
+        KUBECONFIG = credentials('kubeconfig')
+        RELEASE_NAME = 'templateapp'
+        NAMESPACE = 'dev'
+    }
+
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        timeout(time: 30, unit: 'MINUTES')
+        timestamps()
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+                script {
+                    env.IMAGE_TAG = "${env.BUILD_NUMBER}"
+                }
+            }
+        }
+
+        stage('Build Image') {
+            steps {
+                dir('app') {
+                    sh '''
+                        docker build -t ${DOCKER_REPO}:${IMAGE_TAG} -f Dockerfile .
+                    '''
+                }
+            }
+        }
+
+        stage('Push Image') {
+            steps {
+                sh '''
+                    docker push ${DOCKER_REPO}:${IMAGE_TAG}
+                '''
+            }
+        }
+
+        stage('Deploy to Minikube') {
+            steps {
+                sh '''
+                    kubectl get nodes
+                    helm upgrade --install ${RELEASE_NAME} ./app/helm \\
+                      --namespace ${NAMESPACE} \\
+                      --create-namespace \\
+                      --set image.repository=${DOCKER_REPO} \\
+                      --set image.tag=${IMAGE_TAG} \\
+                      --set ingress.enabled=false \\
+                      --wait --timeout=5m
+                    kubectl -n ${NAMESPACE} get pods -l app.kubernetes.io/instance=${RELEASE_NAME}
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}

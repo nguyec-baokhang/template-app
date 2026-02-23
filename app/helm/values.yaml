@@ -1,0 +1,46 @@
+# helm/values.yaml (default values)
+replicaCount: 2
+
+image:
+  repository: localhost:5001/app-image
+  pullPolicy: IfNotPresent
+  tag: latest
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  host: templateapp.example.com
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+environment: production
+
+# Database configuration
+database:
+  host: postgres.example.com
+  port: 5432
+  name: myapp
+  
+# Redis configuration
+redis:
+  host: redis.example.com
+  port: 6379
+
+nodeSelector: {}
+tolerations: []

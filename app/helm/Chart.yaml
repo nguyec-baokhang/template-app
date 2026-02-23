@@ -1,0 +1,5 @@
+apiVersion: v2
+name: templateapp
+description: Helm chart for templateapp
+type: application
+version: 1.0.0
