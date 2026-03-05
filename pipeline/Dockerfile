@@ -14,8 +14,6 @@ RUN apt-get update \
  && usermod -aG docker jenkins \
  && rm -rf /var/lib/apt/lists/*
 
-COPY pipeline/Jenkinsfile /pipeline/
-
 USER jenkins
 
 
