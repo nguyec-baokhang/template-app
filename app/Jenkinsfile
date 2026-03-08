@@ -19,6 +19,7 @@ pipeline {
             '''
             defaultContainer 'docker'
         }
+    }
 
     environment {
         DOCKER_REPO = 'localhost:5001/app-image'
