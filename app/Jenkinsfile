@@ -1,5 +1,24 @@
 pipeline {
-    agent any
+    agent {
+        kubernetes {
+            yaml '''
+            spec:
+              containers:
+              - name: docker
+                image: docker:24.0.7
+                command:
+                - cat
+                tty: true
+                volumeMounts:
+                - name: docker-sock
+                  mountPath: /var/run/docker.sock
+              volumes:
+              - name: docker-sock
+                hostPath:
+                  path: /var/run/docker.sock
+            '''
+            defaultContainer 'docker'
+        }
 
     environment {
         DOCKER_REPO = 'localhost:5001/app-image'
