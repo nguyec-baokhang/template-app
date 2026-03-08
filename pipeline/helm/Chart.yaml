@@ -1,5 +1,0 @@
-apiVersion: v2
-name: pipeline
-description: Helm chart for pipeline
-type: application
-version: 1.0.0

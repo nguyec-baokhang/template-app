@@ -1,0 +1,3 @@
+[submodule "pipeline/pipeline/kubernetes-jenkins"]
+	path = pipeline/pipeline/kubernetes-jenkins
+	url = https://github.com/scriptcamp/kubernetes-jenkins
