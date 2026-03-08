@@ -23,7 +23,6 @@ pipeline {
 
     environment {
         DOCKER_REPO = 'localhost:5001/app-image'
-        KUBECONFIG = credentials('kubeconfig')
         RELEASE_NAME = 'templateapp'
         NAMESPACE = 'dev'
     }
