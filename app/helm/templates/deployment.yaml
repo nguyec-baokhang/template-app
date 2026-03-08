@@ -54,11 +54,8 @@ spec:
       volumes:
       - hostPath:
           path: /var/run/docker.sock
-          type: File
+          type: Socket
         name: docker-sock
-      - name: jenkins-data
-        persistentVolumeClaim:
-          claimName: jenkins-pvc
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
