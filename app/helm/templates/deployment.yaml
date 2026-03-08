@@ -41,24 +41,24 @@ spec:
         env:
         - name: NODE_ENV
           value: {{ .Values.environment }}
-        # - name: DATABASE_URL
-        #   valueFrom:
-        #     secretKeyRef:
-        #       name: {{ include "templateapp.fullname" . }}-secret
-        #       key: database-url
-        # - name: REDIS_URL
-        #   valueFrom:
-        #     configMapKeyRef:
-        #       name: {{ include "templateapp.fullname" . }}-config
-        #       key: redis-url
-        # volumeMounts:
-        # - name: app-config
-        #   mountPath: /app/config
-        #   readOnly: true
-      # volumes:
-      # - name: app-config
-      #   configMap:
-      #     name: {{ include "templateapp.fullname" . }}-config
+        volumeMounts:
+        - mountPath: /var/run/docker.sock
+          name: docker-sock
+        - mountPath: /var/jenkins_home
+          name: jenkins-data
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - hostPath:
+          path: /var/run/docker.sock
+          type: File
+        name: docker-sock
+      - name: jenkins-data
+        persistentVolumeClaim:
+          claimName: jenkins-pvc
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
