@@ -4,18 +4,25 @@ pipeline {
             yaml '''
             spec:
               containers:
-                - name: kaniko
-                image: gcr.io/kaniko-project/executor:latest
-                tty: true
-                volumeMounts:
-                - name: kaniko-secret
-                    mountPath: /kaniko/.docker
+                - name: docker
+                    image: docker:27-cli
+                    tty: true
+                    command:
+                        - cat
+                    volumeMounts:
+                        - name: docker-sock
+                            mountPath: /var/run/docker.sock
+                - name: helm
+                    image: dtzar/helm-kubectl:3.16.1
+                    tty: true
+                    command:
+                        - cat
               volumes:
-              - name: kaniko-secret
-                secret:
-                  secretName: regcred
+                - name: docker-sock
+                    hostPath:
+                        path: /var/run/docker.sock
             '''
-            defaultContainer 'kaniko'
+                defaultContainer 'docker'
         }
     }
 
@@ -23,6 +30,7 @@ pipeline {
         DOCKER_REPO = 'khangnguyen123/app-image'
         RELEASE_NAME = 'templateapp'
         NAMESPACE = 'dev'
+        DOCKER_CREDENTIAL_ID = 'dockerhub-credentials'
         KUBECONFIG_CREDENTIAL_ID = 'minikube-kubeconfig'
     }
 
@@ -44,37 +52,46 @@ pipeline {
 
         stage('Build Image') {
             steps {
-                sh """
-                    /kaniko/executor \
-                      --dockerfile=app/Dockerfile \
-                      --context=app \
-                      --destination=${DOCKER_REPO}:${IMAGE_TAG}
-                """
+                container('docker') {
+                    sh '''
+                        docker version
+                        docker build -f app/Dockerfile -t ${DOCKER_REPO}:${IMAGE_TAG} app
+                    '''
+                }
             }
         }
 
         stage('Push Image') {
             steps {
-                // Kaniko pushes the image as part of the build step, so this stage is no longer needed.
-                echo 'Image pushed by Kaniko.'
+                container('docker') {
+                    withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIAL_ID}", usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        sh '''
+                            echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
+                            docker push ${DOCKER_REPO}:${IMAGE_TAG}
+                            docker logout || true
+                        '''
+                    }
+                }
             }
         }
 
         stage('Deploy to Minikube') {
             steps {
-                withCredentials([file(credentialsId: "${KUBECONFIG_CREDENTIAL_ID}", variable: 'KUBECONFIG')]) {
-                    sh '''
-                        kubectl config current-context
-                        kubectl get nodes
-                        helm upgrade --install ${RELEASE_NAME} ./app/helm \\
-                          --namespace ${NAMESPACE} \\
-                          --create-namespace \\
-                          --set image.repository=${DOCKER_REPO} \\
-                          --set image.tag=${IMAGE_TAG} \\
-                          --set ingress.enabled=false \\
-                          --wait --timeout=5m
-                        kubectl -n ${NAMESPACE} get pods -l app.kubernetes.io/instance=${RELEASE_NAME}
-                    '''
+                container('helm') {
+                    withCredentials([file(credentialsId: "${KUBECONFIG_CREDENTIAL_ID}", variable: 'KUBECONFIG')]) {
+                        sh '''
+                            kubectl config current-context
+                            kubectl get nodes
+                            helm upgrade --install ${RELEASE_NAME} ./app/helm \\
+                              --namespace ${NAMESPACE} \\
+                              --create-namespace \\
+                              --set image.repository=${DOCKER_REPO} \\
+                              --set image.tag=${IMAGE_TAG} \\
+                              --set ingress.enabled=false \\
+                              --wait --timeout=5m
+                            kubectl -n ${NAMESPACE} get pods -l app.kubernetes.io/instance=${RELEASE_NAME}
+                        '''
+                    }
                 }
             }
         }
