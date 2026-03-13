@@ -26,8 +26,21 @@ pipeline {
         }
 
         stage('Build Image') {
+            steps {
+                container('docker') {
+                    sh '''
+                        docker version
+                        docker build -f app/Dockerfile -t ${DOCKER_REPO}:${IMAGE_TAG} app
+                    '''
+                }
+            }
             agent {
-                dockerfile true
+                docker {
+                    dockerfile true
+                }
+            }
+            steps{
+                sh 'docker build -f app/Dockerfile -t ${DOCKER_REPO}:${IMAGE_TAG} app'
             }
         }
 
