@@ -1,30 +1,5 @@
 pipeline {
-    agent {
-        kubernetes {
-            yaml '''
-            spec:
-              containers:
-                - name: docker
-                    image: docker:27-cli
-                    tty: true
-                    command:
-                        - cat
-                    volumeMounts:
-                        - name: docker-sock
-                            mountPath: /var/run/docker.sock
-                - name: helm
-                    image: dtzar/helm-kubectl:3.16.1
-                    tty: true
-                    command:
-                        - cat
-              volumes:
-                - name: docker-sock
-                    hostPath:
-                        path: /var/run/docker.sock
-            '''
-                defaultContainer 'docker'
-        }
-    }
+    agent any
 
     environment {
         DOCKER_REPO = 'khangnguyen123/app-image'
