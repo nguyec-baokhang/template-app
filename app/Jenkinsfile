@@ -1,74 +1,18 @@
-pipeline {
-    agent any
-
-    environment {
-        DOCKER_REPO = 'khangnguyen123/app-image'
-        RELEASE_NAME = 'templateapp'
-        NAMESPACE = 'dev'
-        DOCKER_CREDENTIAL_ID = 'dockerhub-credentials'
-        KUBECONFIG_CREDENTIAL_ID = 'minikube-kubeconfig'
-    }
-
-    options {
-        buildDiscarder(logRotator(numToKeepStr: '10'))
-        timeout(time: 30, unit: 'MINUTES')
-        timestamps()
-    }
-
-    stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-                script {
-                    env.IMAGE_TAG = "${env.BUILD_NUMBER}"
-                }
-            }
+pipline{
+    agent any 
+    stages{
+        stage('Checkout'){
+            git 'https://github.com/nguyec-baokhang/template-app.git'
         }
-
-        stage('Build Image') {
-            steps {
-                container('docker') {
-                    sh '''
-                        docker version
-                        docker build -f app/Dockerfile -t ${DOCKER_REPO}:${IMAGE_TAG} app
-                    '''
-                }
-            }
-            agent {
-                docker {
-                    dockerfile true
-                }
-            }
-            steps{
-                sh 'docker build -f app/Dockerfile -t ${DOCKER_REPO}:${IMAGE_TAG} app'
-            }
+        stage('Build'){
+            sh '''
+                docker build -t template_app . 
+            '''
         }
-
-        stage('Deploy to Minikube') {
-            steps {
-                container('helm') {
-                    withCredentials([file(credentialsId: "${KUBECONFIG_CREDENTIAL_ID}", variable: 'KUBECONFIG')]) {
-                        sh '''
-                            kubectl config current-context
-                            kubectl get nodes
-                            helm upgrade --install ${RELEASE_NAME} ./app/helm \\
-                              --namespace ${NAMESPACE} \\
-                              --create-namespace \\
-                              --set image.repository=${DOCKER_REPO} \\
-                              --set image.tag=${IMAGE_TAG} \\
-                              --set ingress.enabled=false \\
-                              --wait --timeout=5m
-                            kubectl -n ${NAMESPACE} get pods -l app.kubernetes.io/instance=${RELEASE_NAME}
-                        '''
-                    }
-                }
-            }
-        }
-    }
-
-    post {
-        always {
-            cleanWs()
+        stage('Run'){
+            sh'''
+                docker run -d template_app -p 8000:8000
+            '''
         }
     }
 }
