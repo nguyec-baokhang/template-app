@@ -2,17 +2,23 @@ pipeline{
     agent any 
     stages{
         stage('Checkout'){
-            git 'https://github.com/nguyec-baokhang/template-app.git'
+            steps{
+                git 'https://github.com/nguyec-baokhang/template-app.git'
+            }
         }
         stage('Build'){
-            sh '''
-                docker build -t template_app . 
-            '''
+            steps{
+                sh '''
+                    docker build -t template_app . 
+                '''
+            }
         }
         stage('Run'){
-            sh'''
-                docker run -d template_app -p 8000:8000
-            '''
+            steps{
+                sh'''
+                    docker run -d template_app -p 8000:8000
+                '''
+            }
         }
     }
 }
