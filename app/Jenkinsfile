@@ -8,15 +8,15 @@ pipeline{
         stage('Build'){
             steps{
                 sh '''
-                    docker rm -f template_app || true
-                    docker run -d --name template_app -p 8000:8000 template_app
+                   docker build -f app/Dockerfile -t template_app .
                 '''
             }
         }
         stage('Run'){
             steps{
                 sh'''
-                    docker run -d template_app -p 8000:8000
+                    docker rm -f template_app || true
+                    docker run -d --name template_app -p 8000:8000 template_app
                 '''
             }
         }
