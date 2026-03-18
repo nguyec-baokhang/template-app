@@ -2,14 +2,17 @@ FROM ubuntu:22.04
 
 WORKDIR /app
 
+USER root
+
 # Install required packages
 RUN apt-get update && \
     apt-get install -y python3 python3-pip && \
     apt-get install -y cron && \
     apt-get install -y mysql-client && \
     apt-get clean &&\
-    rm -rf /var/lib/apt/lists/*
-
+    rm -rf /var/lib/apt/lists/* 
+RUN gpasswd -a jenkins docker
+USER jenkins
 
 # Install dependencies
 COPY app/requirements.txt ./
