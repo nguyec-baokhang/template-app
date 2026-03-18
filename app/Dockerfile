@@ -10,9 +10,6 @@ RUN apt-get update && \
     apt-get clean &&\
     rm -rf /var/lib/apt/lists/* 
 
-RUN useradd -m -u 10001 appuser
-USER appuser
-
 # Install dependencies
 COPY app/requirements.txt ./
 RUN pip3 install -r requirements.txt
