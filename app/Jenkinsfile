@@ -1,10 +1,15 @@
 pipeline{
     agent any 
+    environment{
+        NAMESPACE = 'dev'
+        KUBECONFIG_CREDENTIAL_ID = 'kubeconfig'
+    }
     stages{
         stage('Build'){
             steps{
                 sh '''
-                    docker build -f app/Dockerfile -t template_app . 
+                    docker rm -f template_app || true
+                    docker run -d --name template_app -p 8000:8000 template_app
                 '''
             }
         }
@@ -13,6 +18,22 @@ pipeline{
                 sh'''
                     docker run -d template_app -p 8000:8000
                 '''
+            }
+        }
+        stage('Deploy (Helm)') {
+            steps {
+                withCredentials([file(credentialsId: "${KUBECONFIG_CREDENTIAL_ID}", variable: 'KUBECONFIG')]) {
+                    sh '''
+                        kubectl --kubeconfig="$KUBECONFIG" get nodes
+
+                        helm --kubeconfig="$KUBECONFIG" upgrade --install ${RELEASE_NAME} ./app/helm \
+                          --namespace ${NAMESPACE} \
+                          --create-namespace \
+                          --wait --timeout=5m
+
+                        kubectl --kubeconfig="$KUBECONFIG" -n ${NAMESPACE} get pods -l app.kubernetes.io/instance=${RELEASE_NAME}
+                    '''
+                }
             }
         }
     }
